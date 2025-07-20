@@ -1,7 +1,6 @@
 class PlayerData:
-    def __init__(self, name, score=0):
+    def __init__(self, name, score, total_time=0, level="Level 1"):
         self.name = name
         self.score = score
-
-    def to_dict(self):
-        return {"name": self.name, "score": self.score}
+        self.total_time = total_time  # Tổng thời gian (giây)
+        self.level = level  # Mức độ (ví dụ: "Level 1")

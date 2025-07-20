@@ -54,4 +54,4 @@ class NameInputScene:
         return self.done
 
     def get_player(self):
-        return PlayerData(self.name)
+        return PlayerData(self.name, 0)  # Truyền score mặc định là 0

@@ -1,6 +1,4 @@
 import pygame
-import sys
-from settings import WIDTH, HEIGHT, FPS
 from scenes.start_scene import StartScene
 from scenes.name_input_scene import NameInputScene
 from scenes.introduction_scene import IntroductionScene
@@ -9,14 +7,13 @@ from scenes.level_select_scene import LevelSelectScene
 from scenes.level_1_scene import Level1Scene
 from scenes.level_2_scene import Level2Scene
 from scenes.level_3_scene import Level3Scene
-from save_manager import save_score
 from player import PlayerData
 
 pygame.init()
-screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
+screen = pygame.display.set_mode((1280, 720))
+pygame.display.set_caption("ARIA Game")
 clock = pygame.time.Clock()
 
-# Khởi tạo các scene
 scenes = [
     StartScene(screen),
     NameInputScene(screen),
@@ -24,41 +21,43 @@ scenes = [
     InstructionScene(screen),
     LevelSelectScene(screen)
 ]
-current_index = 0
-player = None  # Sẽ khởi tạo sau
+
+current_scene_index = 0
+player_name = None
+player = None
 
 running = True
 while running:
-    current_scene = scenes[current_index]
-
     for event in pygame.event.get():
-        if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
+        if event.type == pygame.QUIT:
             running = False
-        current_scene.handle_event(event)
+        scenes[current_scene_index].handle_event(event)
 
-    current_scene.update()
-    current_scene.draw()
+    if scenes[current_scene_index].is_done():
+        if isinstance(scenes[current_scene_index], NameInputScene):
+            player = scenes[current_scene_index].get_player()  # Lấy PlayerData
+            player_name = player.name  # Lấy tên từ PlayerData
+            print(f"DEBUG: Created PlayerData - Name: {player_name}, Score: {player.score}")
+            current_scene_index += 1
+        elif isinstance(scenes[current_scene_index], LevelSelectScene):
+            level_choice = scenes[current_scene_index].get_level_choice()
+            if level_choice == 1:
+                scenes.append(Level1Scene(screen, player_name))
+            elif level_choice == 2:
+                scenes.append(Level2Scene(screen, player_name))
+            elif level_choice == 3:
+                scenes.append(Level3Scene(screen, player_name))
+            current_scene_index += 1
+        else:
+            current_scene_index += 1
+
+    if 0 <= current_scene_index < len(scenes):
+        scenes[current_scene_index].update()
+        scenes[current_scene_index].draw()
+    else:
+        running = False
+
     pygame.display.flip()
-    clock.tick(FPS)
-
-    if current_scene.is_done():
-        if isinstance(current_scene, NameInputScene):
-            player = current_scene.get_player()
-        elif isinstance(current_scene, (Level1Scene, Level2Scene, Level3Scene)):
-            if player is None:  # Khởi tạo player nếu chưa có
-                player = PlayerData("Default", 0)
-            player.score += current_scene.get_score()  # Cộng dồn điểm từ scene
-            save_score(player)  # Lưu điểm sau khi hoàn thành
-        elif isinstance(current_scene, LevelSelectScene):
-            if current_scene.next_scene == 0:
-                scenes.append(Level1Scene(screen))
-            elif current_scene.next_scene == 1:
-                scenes.append(Level2Scene(screen))
-            elif current_scene.next_scene == 2:
-                scenes.append(Level3Scene(screen))
-        current_index += 1
-        if current_index >= len(scenes):
-            running = False
+    clock.tick(60)
 
 pygame.quit()
-sys.exit()

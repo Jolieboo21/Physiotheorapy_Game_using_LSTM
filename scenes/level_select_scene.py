@@ -7,7 +7,7 @@ class LevelSelectScene:
         self.screen = screen
         self.bg = pygame.image.load("assets/images/level_bg.png")
         self.bg = pygame.transform.scale(self.bg, (WIDTH, HEIGHT))
-        self.level1_button = Button("assets/images/level1_button.png", WIDTH // 2 - 425 , 500, width=200, height=100)
+        self.level1_button = Button("assets/images/level1_button.png", WIDTH // 2 - 425, 500, width=200, height=100)
         self.level2_button = Button("assets/images/level2_button.png", WIDTH // 2, 500, width=200, height=100)
         self.level3_button = Button("assets/images/level3_button.png", WIDTH // 2 + 425, 500, width=200, height=100)
         self._is_done = False
@@ -17,13 +17,13 @@ class LevelSelectScene:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mouse_pos = pygame.mouse.get_pos()
             if self.level1_button.is_clicked(mouse_pos):
-                self.next_scene = 0  # Level 1
+                self.next_scene = 1  # Level 1
                 self._is_done = True
             elif self.level2_button.is_clicked(mouse_pos):
-                self.next_scene = 1  # Level 2
+                self.next_scene = 2  # Level 2
                 self._is_done = True
             elif self.level3_button.is_clicked(mouse_pos):
-                self.next_scene = 2  # Level 3
+                self.next_scene = 3  # Level 3
                 self._is_done = True
 
     def update(self):
@@ -37,3 +37,6 @@ class LevelSelectScene:
 
     def is_done(self):
         return self._is_done
+
+    def get_level_choice(self):  # Thêm phương thức này
+        return self.next_scene

@@ -4,6 +4,7 @@ import os
 def save_score(player):
     file_path = "scores.json"
     scores = []
+    print(f"DEBUG: Attempting to save score for {player.name} at {file_path}")  # Debug trước khi đọc
     if os.path.exists(file_path):
         with open(file_path, "r") as f:
             try:
@@ -38,10 +39,17 @@ def save_score(player):
             "level": player.level
         })
     
-    # Ghi lại vào file với debug
-    try:
-        with open(file_path, "w") as f:
-            json.dump(scores, f, indent=4)
-            print(f"DEBUG: Successfully wrote to {file_path} - Scores: {scores}")
-    except Exception as e:
-        print(f"DEBUG: Error writing to {file_path} - {str(e)}")
+    # Kiểm tra quyền ghi trước khi ghi
+    if not os.access(os.path.dirname(file_path) or ".", os.W_OK):
+        print(f"DEBUG: No write permission for {file_path}")
+    else:
+        try:
+            with open(file_path, "w") as f:
+                json.dump(scores, f, indent=4)
+                print(f"DEBUG: Successfully wrote to {file_path} - Scores: {scores}")
+        except PermissionError as e:
+            print(f"DEBUG: Permission Error writing to {file_path} - {str(e)}")
+        except IOError as e:
+            print(f"DEBUG: IO Error writing to {file_path} - {str(e)}")
+        except Exception as e:
+            print(f"DEBUG: Unexpected Error writing to {file_path} - {str(e)}")

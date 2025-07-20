@@ -16,20 +16,29 @@ class NameInputScene:
         self.box_height = 80
         self.box_rect = pygame.Rect(
             WIDTH // 2 - self.box_width // 2,
-            HEIGHT // 2 - 70 - self.box_height // 2+50,
+            HEIGHT // 2 - 70 - self.box_height // 2 + 50,
             self.box_width,
             self.box_height
         )
+        self.error_message = ""  # Thông báo lỗi
 
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RETURN:
-                self.done = True
+                if not self.name:
+                    self.error_message = "Please enter a name"
+                elif len(self.name) > 12:
+                    self.error_message = "Name too long, max 12 characters"
+                else:
+                    self.done = True
+                    self.error_message = ""
             elif event.key == pygame.K_BACKSPACE:
                 self.name = self.name[:-1]
+                self.error_message = ""
             else:
                 if len(self.name) < 12 and event.unicode.isprintable():
                     self.name += event.unicode
+                    self.error_message = ""
 
     def update(self):
         pass
@@ -49,6 +58,13 @@ class NameInputScene:
         text_surface = self.font.render(display_name, True, BLACK)
         text_rect = text_surface.get_rect(center=self.box_rect.center)
         self.screen.blit(text_surface, text_rect)
+
+        # Vẽ thông báo lỗi nếu có
+        if self.error_message:
+            error_font = pygame.font.SysFont("K2D", 24)
+            error_surface = error_font.render(self.error_message, True, (255, 0, 0))  # Màu đỏ
+            error_rect = error_surface.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 50))
+            self.screen.blit(error_surface, error_rect)
 
     def is_done(self):
         return self.done

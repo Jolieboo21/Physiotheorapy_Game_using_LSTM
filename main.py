@@ -8,6 +8,7 @@ from scenes.level_1_scene import Level1Scene
 from scenes.level_2_scene import Level2Scene
 from scenes.level_3_scene import Level3Scene
 from player import PlayerData
+from save_manager import save_score  # Thêm dòng này
 
 pygame.init()
 screen = pygame.display.set_mode((1280, 720))
@@ -35,8 +36,8 @@ while running:
 
     if scenes[current_scene_index].is_done():
         if isinstance(scenes[current_scene_index], NameInputScene):
-            player = scenes[current_scene_index].get_player()  # Lấy PlayerData
-            player_name = player.name  # Lấy tên từ PlayerData
+            player = scenes[current_scene_index].get_player()
+            player_name = player.name
             print(f"DEBUG: Created PlayerData - Name: {player_name}, Score: {player.score}")
             current_scene_index += 1
         elif isinstance(scenes[current_scene_index], LevelSelectScene):
@@ -47,6 +48,19 @@ while running:
                 scenes.append(Level2Scene(screen, player_name))
             elif level_choice == 3:
                 scenes.append(Level3Scene(screen, player_name))
+            current_scene_index += 1
+        elif isinstance(scenes[current_scene_index], (Level1Scene, Level2Scene, Level3Scene)):
+            scene = scenes[current_scene_index]
+            # Ưu tiên sử dụng thuộc tính level từ scene, nếu không có thì dùng isinstance
+            level = getattr(scene, 'level', "Level 1" if isinstance(scene, Level1Scene) else "Level 2" if isinstance(scene, Level2Scene) else "Level 3")
+            player = PlayerData(
+                player_name,
+                scene.get_score(),
+                round(sum(scene.exercise_times), 2),
+                level
+            )
+            print(f"DEBUG: Auto-saving after level - Scene type: {type(scene).__name__}, Level from attr: {getattr(scene, 'level', 'N/A')}, Calculated Level: {level}, Player: {player.name}, Score: {player.score}, Time: {player.total_time}, Saved Level: {player.level}")
+            save_score(player)
             current_scene_index += 1
         else:
             current_scene_index += 1

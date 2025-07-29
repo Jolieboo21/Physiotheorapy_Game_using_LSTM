@@ -8,12 +8,23 @@ from scenes.level_1_scene import Level1Scene
 from scenes.level_2_scene import Level2Scene
 from scenes.level_3_scene import Level3Scene
 from player import PlayerData
-from save_manager import save_score  # Thêm dòng này
+from save_manager import save_score
 
 pygame.init()
+pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=4096)  # Khởi tạo mixer
 screen = pygame.display.set_mode((1280, 720))
 pygame.display.set_caption("ARIA Game")
 clock = pygame.time.Clock()
+
+# Tải và phát nhạc nền
+music_path = "assets/sounds/bg_music.mp3"  # Thay bằng tên file thực tế
+try:
+    pygame.mixer.music.load(music_path)
+    pygame.mixer.music.play(-1)  # Phát lặp lại vô hạn (-1)
+except FileNotFoundError:
+    print(f"DEBUG: Music file not found at {music_path}")
+except pygame.error as e:
+    print(f"DEBUG: Error loading music: {str(e)}")
 
 scenes = [
     StartScene(screen),
@@ -51,7 +62,6 @@ while running:
             current_scene_index += 1
         elif isinstance(scenes[current_scene_index], (Level1Scene, Level2Scene, Level3Scene)):
             scene = scenes[current_scene_index]
-            # Ưu tiên sử dụng thuộc tính level từ scene, nếu không có thì dùng isinstance
             level = getattr(scene, 'level', "Level 1" if isinstance(scene, Level1Scene) else "Level 2" if isinstance(scene, Level2Scene) else "Level 3")
             player = PlayerData(
                 player_name,

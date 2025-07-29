@@ -1,9 +1,8 @@
 [
-    
     {
         "name": "21",
-        "score": 0,
-        "total_time": 20.25,
+        "score": 110,
+        "total_time": 27.08,
         "level": "Level 1"
     },
     {
@@ -11,5 +10,113 @@
         "score": 500,
         "total_time": 286.13,
         "level": "Level 2"
+    },
+    {
+        "name": "heo",
+        "score": 30,
+        "total_time": 21.2,
+        "level": "Level 1"
+    },
+    {
+        "name": "cham",
+        "score": 0,
+        "total_time": 0,
+        "level": "Level 1"
+    },
+    {
+        "name": "game la game",
+        "score": 0,
+        "total_time": 29.89,
+        "level": "Level 1"
+    },
+    {
+        "name": "test",
+        "score": 100,
+        "total_time": 50.51,
+        "level": "Level 1"
+    },
+    {
+        "name": "duy",
+        "score": 50,
+        "total_time": 5.27,
+        "level": "Level 1"
+    },
+    {
+        "name": "duy",
+        "score": 0,
+        "total_time": 33.62,
+        "level": "Level 2"
+    },
+    {
+        "name": "21d",
+        "score": 20,
+        "total_time": 7.91,
+        "level": "Level 1"
+    },
+    {
+        "name": "2111789",
+        "score": 30,
+        "total_time": 10.37,
+        "level": "Level 1"
+    },
+    {
+        "name": "2121",
+        "score": 170,
+        "total_time": 84.47,
+        "level": "Level 1"
+    },
+    {
+        "name": "t",
+        "score": 100,
+        "total_time": 55.42,
+        "level": "Level 1"
+    },
+    {
+        "name": "lam",
+        "score": 1000,
+        "total_time": 672.25,
+        "level": "Level 3"
+    },
+    {
+        "name": "Duy",
+        "score": 110,
+        "total_time": 62.52,
+        "level": "Level 1"
+    },
+    {
+        "name": "dhuhio",
+        "score": 40,
+        "total_time": 34.55,
+        "level": "Level 1"
+    },
+    {
+        "name": "211789",
+        "score": 0,
+        "total_time": 5.26,
+        "level": "Level 1"
+    },
+    {
+        "name": "test nha",
+        "score": 100,
+        "total_time": 59.27,
+        "level": "Level 1"
+    },
+    {
+        "name": "211",
+        "score": 20,
+        "total_time": 11.4,
+        "level": "Level 1"
+    },
+    {
+        "name": "hu",
+        "score": 4750,
+        "total_time": 3077.43,
+        "level": "Level 1"
+    },
+    {
+        "name": "hui",
+        "score": 110,
+        "total_time": 63.16,
+        "level": "Level 1"
     }
 ]

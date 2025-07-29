@@ -10,7 +10,6 @@ from save_manager import save_score
 from player import PlayerData
 
 pose = mp.solutions.pose.Pose()
-mpDraw = mp.solutions.drawing_utils
 
 class Level1Scene:
     def __init__(self, screen, player_name):
@@ -43,14 +42,14 @@ class Level1Scene:
         self._is_done = False
         self.font = pygame.font.Font(None, 36)
         self.last_score_time = 0  # Thời gian cuối cùng cộng điểm
-        self.COOLDOWN_MS = 4500  # Thời gian chờ 2 giây
+        self.COOLDOWN_MS = 5000  # Thời gian chờ 5 giây
         # Khởi tạo background
         self.bg = cv2.imread("assets/images/level1_bg.png")
         if self.bg is None:
             raise FileNotFoundError("Background image not found at: assets/images/level1_bg.png")
         self.bg = cv2.cvtColor(self.bg, cv2.COLOR_BGR2RGB)  # Chuyển sang RGB
         self.bg = cv2.resize(self.bg, (self.screen_width, self.screen_height))
-        # Khởi tạo video cho từng exercise
+        # Khởi tạo video cho từng exercise với FPS
         self.videos = {}
         for exercise in self.exercises:
             for ext in ['.mov', '.mp4']:
@@ -58,12 +57,26 @@ class Level1Scene:
                 cap = cv2.VideoCapture(video_path)
                 if cap.isOpened():
                     self.videos[exercise] = cap
+                    cap.set(cv2.CAP_PROP_FPS, cap.get(cv2.CAP_PROP_FPS))  # Đặt FPS gốc
+                    # print(f"DEBUG: Loaded video for {exercise} at {video_path}, FPS: {cap.get(cv2.CAP_PROP_FPS)}")
                     break
             if exercise not in self.videos:
                 raise FileNotFoundError(f"Video not found for {exercise} (.mov or .mp4)")
         self.start_time = pygame.time.get_ticks()  # Thời gian bắt đầu
         self.player_name = player_name  # Lưu tên người chơi
         self.exercise_times = []  # Lưu thời gian từng động tác
+        self.last_frame_time = 0  # Thời gian hiển thị frame cuối cùng
+        self.score_sound = pygame.mixer.Sound("assets/sounds/bell_3.mp3")
+        self.next_ex_sound = pygame.mixer.Sound("assets/sounds/woosh.mp3")
+        self.plus_ten_image = pygame.image.load("assets/images/plus.png").convert_alpha()
+        self.show_plus_ten = False
+        self.plus_ten_start_time = 0
+        self.congrat_image = pygame.image.load("assets/images/khen.png").convert_alpha()
+        self.congrat_image = pygame.transform.scale(self.congrat_image, (800, 400)) 
+        self.show_congrat = False
+        self.congrat_start_time = 0
+        self.waiting_for_next_exercise = False  # Trạng thái chờ chuyển động tác
+        self.sound_played = False  # Trạng thái âm thanh đã phát
 
     def make_landmark_timestep(self, results):
         lm_list = []
@@ -94,64 +107,53 @@ class Level1Scene:
             if self.label == current_exercise and confidence > 0.95:
                 if current_time - self.last_score_time >= self.COOLDOWN_MS:
                     self.correct_count += 1
-                    self.score += 10  # Cộng 10 điểm sau mỗi 2 giây
+                    self.score += 10  # Cộng 10 điểm sau mỗi 5 giây
                     self.last_score_time = current_time
-                    print(f"DEBUG: Correct detection - Count: {self.correct_count}, Score: {self.score}, Total Score: {self.total_score}")  # Debug
+                    self.score_sound.play()
+                    self.show_plus_ten = True  # Hiển thị hình ảnh +10
+                    self.plus_ten_start_time = current_time  # Ghi thời gian bắt đầu
+                    # print(f"DEBUG: Correct detection - Count: {self.correct_count}, Score: {self.score}, Total Score: {self.total_score}")
             
-            # Kiểm tra hoàn thành động tác
-            if self.correct_count >= self.required_correct_count:  # Đạt 100 điểm
-                self.total_score += self.score  # Cộng điểm của động tác hiện tại vào tổng điểm
+            if self.correct_count >= self.required_correct_count and not self.waiting_for_next_exercise:  # Đạt 100 điểm và chưa chờ
+                self.total_score += self.score
                 current_time = pygame.time.get_ticks()
-                elapsed_time = (current_time - self.start_time) / 1000  # Thời gian động tác hiện tại (giây)
-                self.exercise_times.append(elapsed_time)  # Lưu thời gian
-                self.correct_count = 0  # Đặt lại đếm
-                self.score = 0  # Reset điểm của động tác hiện tại
-                self.current_exercise_index += 1
-                self.last_score_time = 0  # Reset thời gian chờ
-                self.start_time = current_time  # Reset thời gian cho động tác tiếp theo
-                print(f"DEBUG: Moving to next exercise - Index: {self.current_exercise_index}, Total Score: {self.total_score}, Exercise Time: {elapsed_time}s")  # Debug
-                if self.current_exercise_index >= len(self.exercises):
-                    self._is_done = True
+                elapsed_time = (current_time - self.start_time) / 1000
+                self.exercise_times.append(elapsed_time)
+                if not self.sound_played:  # Phát âm thanh chỉ 1 lần
+                    self.next_ex_sound.play()
+                    self.sound_played = True
+                self.show_congrat = True  # Hiển thị hình ảnh chúc mừng
+                self.congrat_start_time = current_time  # Ghi thời gian bắt đầu
+                self.waiting_for_next_exercise = True  # Đánh dấu chờ chuyển động tác
+                # print(f"DEBUG: Waiting for next exercise - Index: {self.current_exercise_index}, Total Score: {self.total_score}, Exercise Time: {elapsed_time}s")
             self.lm_list = []
 
     def draw_landmark_on_image(self, results, frame):
-        mpDraw.draw_landmarks(frame, results.pose_landmarks, mp.solutions.pose.POSE_CONNECTIONS)
-        h, w, c = frame.shape
-        bbox = []
-        if results.pose_landmarks:
-            for id, lm in enumerate(results.pose_landmarks.landmark):
-                cx, cy = int(lm.x * w), int(lm.y * h)
-                bbox.append([cx, cy])
-            x_min, y_min = np.min(bbox, axis=0)
-            x_max, y_max = np.max(bbox, axis=0)
-            cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
         return frame
 
     def handle_event(self, event):
         if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
-            # Lưu điểm tổng khi thoát
             current_time = pygame.time.get_ticks()
             if self.current_exercise_index < len(self.exercises):
                 elapsed_time = (current_time - self.start_time) / 1000
-                self.exercise_times.append(elapsed_time)  # Lưu thời gian động tác hiện tại
-            total_time = sum(self.exercise_times)  # Tổng thời gian (giây)
+                self.exercise_times.append(elapsed_time)
+            total_time = sum(self.exercise_times)
             final_score = self.total_score + self.score
             player = PlayerData(self.player_name, final_score, total_time, "Level 1")
-            print(f"DEBUG: Saving score - Player: {self.player_name}, Final Score: {final_score}, Total Time: {total_time}s, Player Score: {player.score}, Player Time: {player.total_time}")  # Debug
+            # print(f"DEBUG: Saving score - Player: {self.player_name}, Final Score: {final_score}, Total Time: {total_time}s")
             save_score(player)
             self._is_done = True
 
     def update(self):
+        current_time = pygame.time.get_ticks()
         ret, frame = self.cap.read()
         if ret:
             frame = cv2.flip(frame, 1)
-            # Debug định dạng frame camera
-            print("DEBUG: Camera frame shape:", frame.shape, "dtype:", frame.dtype)
-            # Thử chuyển đổi từ YUV sang RGB nếu cần
-            if frame.shape[2] == 3:  # Nếu là 3 kênh (BGR)
+            # print("DEBUG: Camera frame shape:", frame.shape, "dtype:", frame.dtype)
+            if frame.shape[2] == 3:
                 frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            else:  # Giả sử YUV (thường là YUYV hoặc NV12)
-                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_YUV2RGB_I420)  # Thử I420, điều chỉnh nếu cần
+            else:
+                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_YUV2RGB_I420)
             results = pose.process(frame_rgb)
             if results.pose_landmarks:
                 lm = self.make_landmark_timestep(results)
@@ -159,82 +161,94 @@ class Level1Scene:
                 if len(self.lm_list) == 7:
                     detect_thread = threading.Thread(target=self.detect)
                     detect_thread.start()
-                    detect_thread.join()
                     self.lm_list = []
-            frame = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)  # Quay lại BGR để vẽ landmark
-            frame = self.draw_landmark_on_image(results, frame)
-            # Chuẩn bị background để vẽ
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             display_frame = self.bg.copy()
-            # Hiển thị video của động tác hiện tại ở bên trái
-            h, w = display_frame.shape[:2]
-            video_width = 253 
-            video_height = 450 
             if self.current_exercise_index < len(self.exercises):
                 current_exercise = self.exercises[self.current_exercise_index]
                 cap = self.videos[current_exercise]
-                ret_video, video_frame = cap.read()
-                if ret_video:
-                    video_frame = cv2.cvtColor(video_frame, cv2.COLOR_BGR2RGB)  # Chuyển sang RGB
-                    video_frame = cv2.resize(video_frame, (video_width, video_height))
-                    x_offset = 50  
-                    y_offset = 185
-                    display_frame[y_offset:y_offset+video_height, x_offset:x_offset+video_width] = video_frame
+                fps = cap.get(cv2.CAP_PROP_FPS)
+                if fps > 0:
+                    frame_time = 1000 / fps
+                    if current_time - self.last_frame_time >= frame_time:
+                        ret_video, video_frame = cap.read()
+                        if ret_video:
+                            video_frame = cv2.cvtColor(video_frame, cv2.COLOR_BGR2RGB)
+                            video_frame = cv2.resize(video_frame, (253, 450))
+                            x_offset = 50
+                            y_offset = 185
+                            display_frame[y_offset:y_offset+450, x_offset:x_offset+253] = video_frame
+                        else:
+                            cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                        self.last_frame_time = current_time
                 else:
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, 0)  # Loop video
-            # Hiển thị camera ở bên phải
-            camera_width = 800 
+                    ret_video, video_frame = cap.read()
+                    if ret_video:
+                        video_frame = cv2.cvtColor(video_frame, cv2.COLOR_BGR2RGB)
+                        video_frame = cv2.resize(video_frame, (253, 450))
+                        x_offset = 50
+                        y_offset = 185
+                        display_frame[y_offset:y_offset+450, x_offset:x_offset+253] = video_frame
+                    else:
+                        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            camera_width = 800
             camera_height = 450
-            x_offset = 420 
+            x_offset = 420
             y_offset = 185
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # Chuyển camera sang RGB
             frame_rgb = cv2.resize(frame_rgb, (camera_width, camera_height))
             display_frame[y_offset:y_offset+camera_height, x_offset:x_offset+camera_width] = frame_rgb
-            # Chuyển sang pygame surface với swapaxes để điều chỉnh định hướng
             frame_surface = pygame.surfarray.make_surface(display_frame.swapaxes(0, 1))
             self.screen.blit(frame_surface, (0, 0))
-            # Vẽ thông tin bằng Pygame với màu đen
             if self.current_exercise_index < len(self.exercises):
-                exercise_text = self.font.render(f"Exercise: {self.exercises[self.current_exercise_index]}", True, (0, 0, 0))
+                exercise_text = self.font.render(f"Exercise: {self.exercises[self.current_exercise_index]}", True, (0, 151, 178))
             else:
-                exercise_text = self.font.render("Exercise: Completed", True, (0, 0, 0))
-            label_text = self.font.render(f"Detected: {self.label}", True, (0, 0, 0))
-            current_time = pygame.time.get_ticks()
+                exercise_text = self.font.render("Exercise: Completed", True, (0, 151, 178))
+            # label_text = self.font.render(f"Detected: {self.label}", True, (0, 0, 0))
             elapsed_time = (current_time - self.start_time) / 1000
             if elapsed_time >= 120 and self.current_exercise_index < len(self.exercises) - 1:
-                if self.correct_count < self.required_correct_count:  # Không đạt 100 điểm
-                    self.start_time = current_time  # Reset thời gian nhưng giữ động tác
-                    print(f"DEBUG: Time out, not enough points - Count: {self.correct_count}, Score: {self.score}, Total Score: {self.total_score}")  # Debug
-                else:
-                    self.total_score += self.score  # Cộng điểm của động tác hiện tại vào tổng
-                    self.score = 0  # Reset điểm của động tác hiện tại
-                    self.current_exercise_index += 1
-                    self.correct_count = 0  # Đặt lại đếm
-                    self.last_score_time = 0  # Reset thời gian chờ
+                if self.correct_count < self.required_correct_count:
                     self.start_time = current_time
-                    current_time = pygame.time.get_ticks()
-                    elapsed_time = (current_time - self.start_time) / 1000  # Thời gian động tác hiện tại (giây)
-                    self.exercise_times.append(elapsed_time)  # Lưu thời gian
-                    print(f"DEBUG: Moving to next exercise - Index: {self.current_exercise_index}, Total Score: {self.total_score}, Exercise Time: {elapsed_time}s")  # Debug
+                    # print(f"DEBUG: Time out, not enough points - Count: {self.correct_count}, Score: {self.score}, Total Score: {self.total_score}")
             elif elapsed_time >= 120 and self.current_exercise_index == len(self.exercises) - 1:
                 if self.correct_count >= self.required_correct_count:
-                    self.total_score += self.score  # Cộng điểm cuối cùng vào tổng
+                    self.total_score += self.score
                     self._is_done = True
-                    print(f"DEBUG: Level completed - Total Score: {self.total_score}")  # Debug
-            time_text = self.font.render(f"Time: {int(120 - elapsed_time)}s", True, (0, 0, 0))
-            score_text = self.font.render(f"Score: {self.score}", True, (0, 0, 0))
-            self.screen.blit(exercise_text, (20, 20))
-            self.screen.blit(label_text, (20, 60))
-            self.screen.blit(time_text, (20, 100))
-            self.screen.blit(score_text, (20, 140))
+                    print(f"DEBUG: Level completed - Total Score: {self.total_score}")
+            time_text = self.font.render(f"{int(120 - elapsed_time)}s", True, (0, 151, 178))
+            score_text = self.font.render(f"{self.score}", True, (0, 151, 178))
+            # Di chuyển Score và Time sang góc trên bên trái
+            self.screen.blit(score_text, (100, 50))  # Góc trên bên trái
+            self.screen.blit(time_text, (100, 100))   # Dịch xuống dưới score một chút
+            # Di chuyển Exercise và Detected sang góc trên bên phải
+            self.screen.blit(exercise_text, (self.screen_width - exercise_text.get_width() - 150, 100))  
+            # self.screen.blit(label_text, (self.screen_width - label_text.get_width() - 50, 100))
+            if self.show_plus_ten:
+                self.screen.blit(self.plus_ten_image, (900, 200))  # Vị trí gần score
+                if current_time - self.plus_ten_start_time >= 2000:  # Ẩn sau 2 giây
+                    self.show_plus_ten = False     
+            if self.show_congrat:
+                self.screen.blit(self.congrat_image, (self.screen_width // 2 - 400, self.screen_height // 2 - 200))  # Giữa màn hình
+                if current_time - self.congrat_start_time >= 2000:  # Ẩn sau 2 giây
+                    self.show_congrat = False
+                    if self.waiting_for_next_exercise:
+                        self.correct_count = 0
+                        self.score = 0
+                        self.current_exercise_index += 1
+                        self.start_time = current_time
+                        self.waiting_for_next_exercise = False
+                        self.sound_played = False  # Reset trạng thái âm thanh
+                        elapsed_time = (current_time - self.start_time) / 1000
+                        self.exercise_times.append(elapsed_time)
+                        # print(f"DEBUG: Moved to next exercise - Index: {self.current_exercise_index}, Total Score: {self.total_score}, Exercise Time: {elapsed_time}s")
 
     def draw(self):
-        pass  # Không cần draw riêng vì đã xử lý trong update
+        pass
 
     def is_done(self):
         return self._is_done
 
     def get_score(self):
-        return self.total_score  # Trả về tổng điểm thay vì điểm hiện tại
+        return self.total_score
 
     def __del__(self):
         for cap in self.videos.values():

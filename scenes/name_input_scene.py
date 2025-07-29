@@ -21,6 +21,7 @@ class NameInputScene:
             self.box_height
         )
         self.error_message = ""  # Thông báo lỗi
+        self.clicksound = pygame.mixer.Sound("assets/sounds/button-click.mp3")
 
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
@@ -32,6 +33,7 @@ class NameInputScene:
                 else:
                     self.done = True
                     self.error_message = ""
+                    self.clicksound.play()
             elif event.key == pygame.K_BACKSPACE:
                 self.name = self.name[:-1]
                 self.error_message = ""

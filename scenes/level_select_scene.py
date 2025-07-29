@@ -11,6 +11,7 @@ class LevelSelectScene:
         self.level2_button = Button("assets/images/level2_button.png", WIDTH // 2, 500, width=200, height=100)
         self.level3_button = Button("assets/images/level3_button.png", WIDTH // 2 + 425, 500, width=200, height=100)
         self._is_done = False
+        self.clicksound = pygame.mixer.Sound("assets/sounds/button-click.mp3")
         self.next_scene = 0  # Giá trị mặc định, 0 nghĩa là chưa chọn
 
     def handle_event(self, event):
@@ -22,14 +23,17 @@ class LevelSelectScene:
             mouse_pos = pygame.mouse.get_pos()
             if self.level1_button.is_clicked(mouse_pos):
                 self.next_scene = 1  # Level 1
+                self.clicksound.play()
                 self._is_done = True
                 print(f"DEBUG: Selected Level 1")
             elif self.level2_button.is_clicked(mouse_pos):
                 self.next_scene = 2  # Level 2
+                self.clicksound.play()
                 self._is_done = True
                 print(f"DEBUG: Selected Level 2")
             elif self.level3_button.is_clicked(mouse_pos):
                 self.next_scene = 3  # Level 3
+                self.clicksound.play()
                 self._is_done = True
                 print(f"DEBUG: Selected Level 3")
 

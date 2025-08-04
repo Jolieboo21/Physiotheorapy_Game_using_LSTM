@@ -7,21 +7,8 @@ from save_manager import save_score
 from scenes.level_1_scene import Level1Scene
 
 class Level2Scene(Level1Scene):
-    def __init__(self, screen, player_name):
-        super().__init__(screen, player_name)  # Truyền player_name
-        self.exercises = np.random.choice(self.classes, 5, replace=False).tolist()  # 5 động tác
+    def __init__(self, screen, player_name, model, cap, videos, bg, plus_ten_image, congrat_image, score_sound, next_ex_sound):
+        super().__init__(screen, player_name, model, cap, videos, bg, plus_ten_image, congrat_image, score_sound, next_ex_sound)
+        self.exercises = list(videos.keys())[:5]  # Sử dụng 5 video đầu tiên từ videos
         self.level = "Level 2"  # Định nghĩa level cụ thể
-        # Tải lại video cho các bài tập mới
-        self.videos = {}
-        for exercise in self.exercises:
-            video_found = False
-            for ext in ['.mov', '.mp4']:
-                video_path = f"assets/videos/{exercise}{ext}"
-                cap = cv2.VideoCapture(video_path)
-                if cap.isOpened():
-                    self.videos[exercise] = cap
-                    video_found = True
-                    print(f"DEBUG: Loaded video for {exercise} at {video_path}")
-                    break
-            if not video_found:
-                raise FileNotFoundError(f"Video not found for {exercise} (.mov or .mp4)")
+        # Xóa đoạn tải video, vì đã được xử lý trong LoadingScene

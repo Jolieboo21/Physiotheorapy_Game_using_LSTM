@@ -4,28 +4,33 @@ from scenes.name_input_scene import NameInputScene
 from scenes.introduction_scene import IntroductionScene
 from scenes.instruction_scene import InstructionScene
 from scenes.level_select_scene import LevelSelectScene
+from scenes.loading_scene import LoadingScene
 from scenes.level_1_scene import Level1Scene
 from scenes.level_2_scene import Level2Scene
 from scenes.level_3_scene import Level3Scene
+from scenes.hand_exercise_scene import HandExerciseScene  # Thêm mới
+from scenes.leg_exercise_scene import LegExerciseScene  # Thêm mới
 from player import PlayerData
 from save_manager import save_score
 
+# Khởi tạo Pygame và mixer
 pygame.init()
-pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=4096)  # Khởi tạo mixer
+pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=4096)
 screen = pygame.display.set_mode((1280, 720))
 pygame.display.set_caption("ARIA Game")
 clock = pygame.time.Clock()
 
 # Tải và phát nhạc nền
-music_path = "assets/sounds/bg_music.mp3"  # Thay bằng tên file thực tế
+music_path = "assets/sounds/bg_music.mp3"
 try:
     pygame.mixer.music.load(music_path)
-    pygame.mixer.music.play(-1)  # Phát lặp lại vô hạn (-1)
+    pygame.mixer.music.play(-1)
 except FileNotFoundError:
     print(f"DEBUG: Music file not found at {music_path}")
 except pygame.error as e:
     print(f"DEBUG: Error loading music: {str(e)}")
 
+# Khởi tạo danh sách scene ban đầu
 scenes = [
     StartScene(screen),
     NameInputScene(screen),
@@ -53,16 +58,30 @@ while running:
             current_scene_index += 1
         elif isinstance(scenes[current_scene_index], LevelSelectScene):
             level_choice = scenes[current_scene_index].get_level_choice()
-            if level_choice == 1:
-                scenes.append(Level1Scene(screen, player_name))
-            elif level_choice == 2:
-                scenes.append(Level2Scene(screen, player_name))
-            elif level_choice == 3:
-                scenes.append(Level3Scene(screen, player_name))
-            current_scene_index += 1
-        elif isinstance(scenes[current_scene_index], (Level1Scene, Level2Scene, Level3Scene)):
+            if level_choice in [1, 2, 3, 4, 5]:  # Thêm 4 và 5 cho Hand và Leg
+                if level_choice == 1:
+                    scenes.append(LoadingScene(screen, Level1Scene, player_name, 1))
+                elif level_choice == 2:
+                    scenes.append(LoadingScene(screen, Level2Scene, player_name, 2))
+                elif level_choice == 3:
+                    scenes.append(LoadingScene(screen, Level3Scene, player_name, 3))
+                elif level_choice == 4:
+                    scenes.append(LoadingScene(screen, HandExerciseScene, player_name, 4))
+                elif level_choice == 5:
+                    scenes.append(LoadingScene(screen, LegExerciseScene, player_name, 5))
+                current_scene_index += 1
+        elif isinstance(scenes[current_scene_index], LoadingScene):
+            next_scene = scenes[current_scene_index].get_next_scene()
+            if next_scene:
+                scenes.append(next_scene)
+                current_scene_index += 1
+        elif isinstance(scenes[current_scene_index], (Level1Scene, Level2Scene, Level3Scene, HandExerciseScene, LegExerciseScene)):
             scene = scenes[current_scene_index]
-            level = getattr(scene, 'level', "Level 1" if isinstance(scene, Level1Scene) else "Level 2" if isinstance(scene, Level2Scene) else "Level 3")
+            level = getattr(scene, 'level', "Level 1" if isinstance(scene, Level1Scene) else 
+                           "Level 2" if isinstance(scene, Level2Scene) else 
+                           "Level 3" if isinstance(scene, Level3Scene) else 
+                           "Hand Exercise" if isinstance(scene, HandExerciseScene) else 
+                           "Leg Exercise")
             player = PlayerData(
                 player_name,
                 scene.get_score(),

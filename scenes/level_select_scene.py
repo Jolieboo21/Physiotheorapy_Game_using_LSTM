@@ -7,9 +7,11 @@ class LevelSelectScene:
         self.screen = screen
         self.bg = pygame.image.load("assets/images/level_bg.png")
         self.bg = pygame.transform.scale(self.bg, (WIDTH, HEIGHT))
-        self.level1_button = Button("assets/images/level1_button.png", WIDTH // 2 - 425, 500, width=200, height=100)
-        self.level2_button = Button("assets/images/level2_button.png", WIDTH // 2, 500, width=200, height=100)
-        self.level3_button = Button("assets/images/level3_button.png", WIDTH // 2 + 425, 500, width=200, height=100)
+        self.level1_button = Button("assets/images/play_button.png", WIDTH // 2 - 390, 590, width=150, height=75)
+        self.level2_button = Button("assets/images/play_button.png", WIDTH // 2, 590, width=150, height=75)
+        self.level3_button = Button("assets/images/play_button.png", WIDTH // 2 + 390, 590, width=150, height=75)
+        self.hand_exercise_button = Button("assets/images/play_button.png", WIDTH // 2 - 195, 350, width=150, height=75)
+        self.leg_exercise_button = Button("assets/images/play_button.png", WIDTH // 2 + 195, 350, width=150, height=75)
         self._is_done = False
         self.clicksound = pygame.mixer.Sound("assets/sounds/button-click.mp3")
         self.next_scene = 0  # Giá trị mặc định, 0 nghĩa là chưa chọn
@@ -36,6 +38,16 @@ class LevelSelectScene:
                 self.clicksound.play()
                 self._is_done = True
                 print(f"DEBUG: Selected Level 3")
+            elif self.hand_exercise_button.is_clicked(mouse_pos):
+                self.next_scene = 4  # Hand Exercise Level
+                self.clicksound.play()
+                self._is_done = True
+                print(f"DEBUG: Selected Hand Exercise Level")
+            elif self.leg_exercise_button.is_clicked(mouse_pos):
+                self.next_scene = 5  # Leg Exercise Level
+                self.clicksound.play()
+                self._is_done = True
+                print(f"DEBUG: Selected Leg Exercise Level")
 
     def update(self):
         pass
@@ -45,6 +57,8 @@ class LevelSelectScene:
         self.level1_button.draw(self.screen)
         self.level2_button.draw(self.screen)
         self.level3_button.draw(self.screen)
+        self.hand_exercise_button.draw(self.screen)
+        self.leg_exercise_button.draw(self.screen)
 
     def is_done(self):
         return self._is_done

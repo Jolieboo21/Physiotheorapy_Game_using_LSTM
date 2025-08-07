@@ -7,11 +7,11 @@ class LevelSelectScene:
         self.screen = screen
         self.bg = pygame.image.load("assets/images/level_bg.png")
         self.bg = pygame.transform.scale(self.bg, (WIDTH, HEIGHT))
-        self.level1_button = Button("assets/images/play_button.png", WIDTH // 2 - 390, 590, width=150, height=75)
-        self.level2_button = Button("assets/images/play_button.png", WIDTH // 2, 590, width=150, height=75)
-        self.level3_button = Button("assets/images/play_button.png", WIDTH // 2 + 390, 590, width=150, height=75)
-        self.hand_exercise_button = Button("assets/images/play_button.png", WIDTH // 2 - 195, 350, width=150, height=75)
-        self.leg_exercise_button = Button("assets/images/play_button.png", WIDTH // 2 + 195, 350, width=150, height=75)
+        self.level1_button = Button("assets/images/level1_button.png", WIDTH // 2 - 390, 590, width=150, height=75)
+        self.level2_button = Button("assets/images/level2_button.png", WIDTH // 2, 590, width=150, height=75)
+        self.level3_button = Button("assets/images/level3_button.png", WIDTH // 2 + 390, 590, width=150, height=75)
+        self.hand_exercise_button = Button("assets/images/level_hand_button.png", WIDTH // 2 - 195, 330, width=150, height=75)
+        self.leg_exercise_button = Button("assets/images/level_leg_button.png", WIDTH // 2 + 195, 330, width=150, height=75)
         self._is_done = False
         self.clicksound = pygame.mixer.Sound("assets/sounds/button-click.mp3")
         self.next_scene = 0  # Giá trị mặc định, 0 nghĩa là chưa chọn

@@ -1,4 +1,6 @@
 import pygame
+import json
+from datetime import datetime
 from scenes.start_scene import StartScene
 from scenes.name_input_scene import NameInputScene
 from scenes.introduction_scene import IntroductionScene
@@ -8,10 +10,11 @@ from scenes.loading_scene import LoadingScene
 from scenes.level_1_scene import Level1Scene
 from scenes.level_2_scene import Level2Scene
 from scenes.level_3_scene import Level3Scene
-from scenes.hand_exercise_scene import HandExerciseScene  # Thêm mới
-from scenes.leg_exercise_scene import LegExerciseScene  # Thêm mới
+from scenes.hand_exercise_scene import HandExerciseScene
+from scenes.leg_exercise_scene import LegExerciseScene
+from scenes.result_scene import ResultScene
 from player import PlayerData
-from save_manager import save_score
+from save_manager import save_score, load_scores  # Sử dụng load_scores
 
 # Khởi tạo Pygame và mixer
 pygame.init()
@@ -29,6 +32,9 @@ except FileNotFoundError:
     print(f"DEBUG: Music file not found at {music_path}")
 except pygame.error as e:
     print(f"DEBUG: Error loading music: {str(e)}")
+
+# Đọc dữ liệu từ scores.json
+all_players = load_scores()  # Sử dụng load_scores từ save_manager
 
 # Khởi tạo danh sách scene ban đầu
 scenes = [
@@ -54,11 +60,11 @@ while running:
         if isinstance(scenes[current_scene_index], NameInputScene):
             player = scenes[current_scene_index].get_player()
             player_name = player.name
-            print(f"DEBUG: Created PlayerData - Name: {player_name}, Score: {player.score}")
+            print(f"DEBUG: Created PlayerData - Name: {player_name}, Score: {player.total_score}")
             current_scene_index += 1
         elif isinstance(scenes[current_scene_index], LevelSelectScene):
             level_choice = scenes[current_scene_index].get_level_choice()
-            if level_choice in [1, 2, 3, 4, 5]:  # Thêm 4 và 5 cho Hand và Leg
+            if level_choice in [1, 2, 3, 4, 5]:
                 if level_choice == 1:
                     scenes.append(LoadingScene(screen, Level1Scene, player_name, 1))
                 elif level_choice == 2:
@@ -86,11 +92,24 @@ while running:
                 player_name,
                 scene.get_score(),
                 round(sum(scene.exercise_times), 2),
-                level
+                level,
+                exercise_names=getattr(scene, 'exercise_names', []),
+                exercise_scores=scene.exercise_scores,
+                exercise_times=scene.exercise_times
             )
-            print(f"DEBUG: Auto-saving after level - Scene type: {type(scene).__name__}, Level from attr: {getattr(scene, 'level', 'N/A')}, Calculated Level: {level}, Player: {player.name}, Score: {player.score}, Time: {player.total_time}, Saved Level: {player.level}")
+            print(f"DEBUG: Auto-saving after level - Scene type: {type(scene).__name__}, Level from attr: {getattr(scene, 'level', 'N/A')}, Calculated Level: {level}, Player: {player.name}, Score: {player.total_score}, Time: {player.total_time}, Saved Level: {player.level}")
             save_score(player)
+            # Cập nhật all_players sau khi lưu
+            all_players = load_scores()  # Tải lại để đảm bảo dữ liệu mới nhất
+            scenes.append(ResultScene(screen, player, all_players))
             current_scene_index += 1
+        elif isinstance(scenes[current_scene_index], ResultScene):
+            next_scene = scenes[current_scene_index].get_next_scene()
+            if next_scene == "LevelSelectScene":
+                scenes.append(LevelSelectScene(screen))
+                current_scene_index += 1
+            elif next_scene is None:  # Thoát game
+                running = False
         else:
             current_scene_index += 1
 

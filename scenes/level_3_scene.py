@@ -4,11 +4,13 @@ import numpy as np
 import tensorflow as tf
 from keras.models import load_model
 from save_manager import save_score
-from scenes.level_1_scene import Level1Scene
+from scenes.level_1_scene import Level1Scene, exercise_mapping  # Nhập exercise_mapping
 
 class Level3Scene(Level1Scene):
     def __init__(self, screen, player_name, model, cap, videos, bg, plus_ten_image, congrat_image, score_sound, next_ex_sound):
         super().__init__(screen, player_name, model, cap, videos, bg, plus_ten_image, congrat_image, score_sound, next_ex_sound)
-        self.exercises = list(videos.keys())[:10]  # Sử dụng 10 video đầu tiên từ videos
-        self.level = "Level 3"  # Định nghĩa level cụ thể
-        # Xóa đoạn tải video, vì đã được xử lý trong LoadingScene
+        self.exercise_keys = list(videos.keys())[:10]  # Sử dụng 10 khóa tiếng Anh đầu tiên cho tìm video
+        self.exercises = [exercise_mapping[key] for key in self.exercise_keys]  # Ánh xạ sang tiếng Việt cho hiển thị
+        self.exercise_names = self.exercises.copy()  # Tên tiếng Việt để lưu
+        self.level = "Level 3"  # Tên level cụ thể
+        print(f"DEBUG: Level3Scene exercises: {self.exercises}, exercise_keys: {self.exercise_keys}, videos keys: {list(videos.keys())}")

@@ -63,14 +63,16 @@ class LoadingScene:
         self.all_classes = ['knee_raise', 'forward_bend', 'arms_crossed', 'arms_legs_combined',
                            'leg_extension', 'arms_raised', 'arms_sideways', 'arms_front_chest',
                            'chest_exercise', 'arms_rotation']
-        hand_classes = ['arms_raised', 'arms_sideways', 'arms_front_chest', 'chest_exercise', 'arms_rotation']
-        leg_classes = ['knee_raise', 'forward_bend', 'leg_extension', 'arms_legs_combined']
+        hand_classes = ['arms_raised', 'arms_sideways', 'arms_front_chest', 'chest_exercise', 'arms_rotation','forward_bend', 'arms_crossed']
+        leg_classes = ['knee_raise', 'leg_extension', 'arms_legs_combined']
 
         if self.level == 4:  # Hand Exercise Level
-            exercises = np.random.choice(hand_classes, 5, replace=False).tolist()
+            exercises = np.random.choice(hand_classes, 7, replace=False).tolist()
         elif self.level == 5:  # Leg Exercise Level
-            exercises = np.random.choice(leg_classes, 5, replace=False).tolist()
-        else:  # Level 1, 2, 3
+            exercises = np.random.choice(leg_classes, 3, replace=False).tolist()
+        elif self.level == 3:  # Level 3
+            exercises = np.random.choice(self.all_classes, 10, replace=False).tolist()  # Chọn 10 động tác
+        else:  # Level 1, 2
             exercises = np.random.choice(self.all_classes, 5, replace=False).tolist()
 
         for exercise in exercises:

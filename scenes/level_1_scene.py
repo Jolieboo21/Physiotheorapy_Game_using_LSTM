@@ -6,6 +6,20 @@ import mediapipe as mp
 import threading
 from save_manager import save_score
 from player import PlayerData
+import datetime
+
+exercise_mapping = {
+    'knee_raise': 'Nâng đầu gối',
+    'forward_bend': 'Cúi người về trước',
+    'arms_crossed': 'Chéo tay',
+    'arms_legs_combined': 'Kết hợp tay và chân',
+    'leg_extension': 'Duỗi chân',
+    'arms_raised': 'Nâng tay',
+    'arms_sideways': 'Giơ tay ngang',
+    'arms_front_chest': 'Tay trước ngực',
+    'chest_exercise': 'Tập ngực',
+    'arms_rotation': 'Xoay tay'
+}
 
 pose = mp.solutions.pose.Pose()
 
@@ -20,7 +34,7 @@ class Level1Scene:
         self.classes = ['knee_raise', 'forward_bend', 'arms_crossed', 'arms_legs_combined',
                         'leg_extension', 'arms_raised', 'arms_sideways', 'arms_front_chest',
                         'chest_exercise', 'arms_rotation']
-        self.exercises = list(videos.keys())  # Sử dụng tất cả video từ videos, không giới hạn [:3]
+        self.exercises = [exercise_mapping.get(key, key) for key in videos.keys()]
         self.lm_list = []
         self.label = "Unknown"
         self.score = 0
@@ -29,14 +43,20 @@ class Level1Scene:
         self.correct_count = 0
         self.required_correct_count = 10
         self._is_done = False
-        self.font = pygame.font.Font(None, 36)
+        try:
+            self.font = pygame.font.Font("assets/fonts/K2D-Bold.ttf", 36)
+        except pygame.error:
+            print("DEBUG: Font K2D.ttf not found, using default font")
+            self.font = pygame.font.SysFont("Arial", 36)
         self.last_score_time = 0
-        self.COOLDOWN_MS = 5000
+        self.COOLDOWN_MS = 1000 # 5 giây cooldown tốc độ người chơi
         self.bg = bg
-        self.videos = videos  # Giữ nguyên tất cả video từ LoadingScene
+        self.videos = videos
         self.start_time = pygame.time.get_ticks()
         self.player_name = player_name
         self.exercise_times = []
+        self.exercise_scores = []
+        self.exercise_names = self.exercises.copy()
         self.last_frame_time = 0
         self.plus_ten_image = plus_ten_image
         self.show_plus_ten = False
@@ -48,7 +68,7 @@ class Level1Scene:
         self.sound_played = False
         self.score_sound = score_sound
         self.next_ex_sound = next_ex_sound
-        self.level = "Level 1"  # Thêm thuộc tính level
+        self.level = "Level 1"
 
     def make_landmark_timestep(self, results):
         lm_list = []
@@ -74,9 +94,11 @@ class Level1Scene:
             
             self.label = self.classes[predicted_label_index] if confidence > 0.95 else "neutral"
             current_time = pygame.time.get_ticks()
-            current_exercise = self.exercises[self.current_exercise_index]
+            current_exercise = self.exercises[self.current_exercise_index] if self.current_exercise_index < len(self.exercises) else None
             
-            if self.label == current_exercise and confidence > 0.95:
+            if (current_exercise and 
+                self.label == list(exercise_mapping.keys())[list(exercise_mapping.values()).index(current_exercise)] and 
+                confidence > 0.95):
                 if current_time - self.last_score_time >= self.COOLDOWN_MS:
                     self.correct_count += 1
                     self.score += 10
@@ -85,7 +107,8 @@ class Level1Scene:
                     self.show_plus_ten = True
                     self.plus_ten_start_time = current_time
             
-            if self.correct_count >= self.required_correct_count and not self.waiting_for_next_exercise:
+            if self.correct_count >= self.required_correct_count and not self.waiting_for_next_exercise and self.current_exercise_index < len(self.exercises):
+                self.exercise_scores.append(self.score)
                 self.total_score += self.score
                 current_time = pygame.time.get_ticks()
                 elapsed_time = (current_time - self.start_time) / 1000
@@ -107,9 +130,11 @@ class Level1Scene:
             if self.current_exercise_index < len(self.exercises):
                 elapsed_time = (current_time - self.start_time) / 1000
                 self.exercise_times.append(elapsed_time)
+                self.exercise_scores.append(self.score)
             total_time = sum(self.exercise_times)
             final_score = self.total_score + self.score
-            player = PlayerData(self.player_name, final_score, total_time, self.level)
+            player = PlayerData(self.player_name, final_score, total_time, self.level,
+                              exercise_names=self.exercise_names, exercise_scores=self.exercise_scores, exercise_times=self.exercise_times)
             save_score(player)
             self._is_done = True
 
@@ -135,7 +160,7 @@ class Level1Scene:
             try:
                 if self.current_exercise_index < len(self.exercises):
                     current_exercise = self.exercises[self.current_exercise_index]
-                    cap = self.videos[current_exercise]
+                    cap = self.videos[list(exercise_mapping.keys())[list(exercise_mapping.values()).index(current_exercise)]]
                     fps = cap.get(cv2.CAP_PROP_FPS)
                     if fps > 0:
                         frame_time = 1000 / fps
@@ -159,9 +184,9 @@ class Level1Scene:
                 frame_surface = pygame.surfarray.make_surface(display_frame.swapaxes(0, 1))
                 self.screen.blit(frame_surface, (0, 0))
                 if self.current_exercise_index < len(self.exercises):
-                    exercise_text = self.font.render(f"Exercise: {self.exercises[self.current_exercise_index]}", True, (0, 151, 178))
+                    exercise_text = self.font.render(f"Bài tập: {self.exercises[self.current_exercise_index]}", True, (255, 255, 255))
                 else:
-                    exercise_text = self.font.render("Exercise: Completed", True, (0, 151, 178))
+                    exercise_text = self.font.render("Bài tập: Hoàn thành", True, (255, 255, 255))
                 elapsed_time = (current_time - self.start_time) / 1000
                 if elapsed_time >= 120 and self.current_exercise_index < len(self.exercises) - 1:
                     if self.correct_count < self.required_correct_count:
@@ -176,19 +201,21 @@ class Level1Scene:
                     if self.current_exercise_index < len(self.exercises):
                         elapsed_time = (current_time - self.start_time) / 1000
                         self.exercise_times.append(elapsed_time)
+                        self.exercise_scores.append(self.score)
                     total_time = sum(self.exercise_times)
                     final_score = self.total_score + self.score
-                    player = PlayerData(self.player_name, final_score, total_time, self.level)
+                    player = PlayerData(self.player_name, final_score, total_time, self.level,
+                                      exercise_names=self.exercise_names, exercise_scores=self.exercise_scores, exercise_times=self.exercise_times)
                     save_score(player)
             except KeyError as e:
                 print(f"DEBUG: KeyError in update - Missing video for {e}, exercises: {self.exercises}, videos keys: {list(self.videos.keys())}")
                 self._is_done = True
 
-            time_text = self.font.render(f"{int(120 - elapsed_time)}s", True, (0, 151, 178))
-            score_text = self.font.render(f"{self.score}", True, (0, 151, 178))
+            time_text = self.font.render(f"{int(120 - elapsed_time)}", True, (0, 151, 178))
+            score_text = self.font.render(f" {self.score}", True, (0, 151, 178))
             self.screen.blit(score_text, (100, 50))
-            self.screen.blit(time_text, (100, 100))
-            self.screen.blit(exercise_text, (self.screen_width - exercise_text.get_width() - 150, 100))
+            self.screen.blit(time_text, (470, 45))
+            self.screen.blit(exercise_text, (self.screen_width - exercise_text.get_width() - 150, 50))
             if self.show_plus_ten:
                 self.screen.blit(self.plus_ten_image, (900, 200))
                 if current_time - self.plus_ten_start_time >= 2000:
@@ -197,15 +224,15 @@ class Level1Scene:
                 self.screen.blit(self.congrat_image, (self.screen_width // 2 - 400, self.screen_height // 2 - 200))
                 if current_time - self.congrat_start_time >= 2000:
                     self.show_congrat = False
-                    if self.waiting_for_next_exercise:
+                    if self.waiting_for_next_exercise and self.current_exercise_index < len(self.exercises) - 1:
                         self.correct_count = 0
                         self.score = 0
                         self.current_exercise_index += 1
                         self.start_time = current_time
                         self.waiting_for_next_exercise = False
                         self.sound_played = False
-                        elapsed_time = (current_time - self.start_time) / 1000
-                        self.exercise_times.append(elapsed_time)
+                    elif self.current_exercise_index == len(self.exercises) - 1 and self.correct_count >= self.required_correct_count:
+                        self._is_done = True
 
     def draw(self):
         pass
@@ -219,5 +246,6 @@ class Level1Scene:
     def __del__(self):
         if self.cap:
             self.cap.release()
-        for cap in self.videos.values():
-            cap.release()
+        if hasattr(self, 'videos'):
+            for cap in self.videos.values():
+                cap.release()

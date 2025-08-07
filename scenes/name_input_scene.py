@@ -63,13 +63,12 @@ class NameInputScene:
 
         # Vẽ thông báo lỗi nếu có
         if self.error_message:
-            error_font = pygame.font.SysFont("K2D", 24)
+            error_font = pygame.font.Font("assets/fonts/K2D-Bold.ttf", 36)
             error_surface = error_font.render(self.error_message, True, (255, 0, 0))  # Màu đỏ
             error_rect = error_surface.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 50))
             self.screen.blit(error_surface, error_rect)
-
     def is_done(self):
         return self.done
 
     def get_player(self):
-        return PlayerData(self.name, 0)  # Truyền score mặc định là 0
+        return PlayerData(self.name, total_score=0)  # Sử dụng total_score thay vì score

@@ -7,6 +7,7 @@ import threading
 from save_manager import save_score
 from player import PlayerData
 import datetime
+import os
 
 exercise_mapping = {
     'knee_raise': 'Nâng đầu gối',
@@ -49,7 +50,7 @@ class Level1Scene:
             print("DEBUG: Font K2D.ttf not found, using default font")
             self.font = pygame.font.SysFont("Arial", 36)
         self.last_score_time = 0
-        self.COOLDOWN_MS = 1000 # 5 giây cooldown tốc độ người chơi
+        self.COOLDOWN_MS = 3000  # Cooldown tốc độ người chơi
         self.bg = bg
         self.videos = videos
         self.start_time = pygame.time.get_ticks()
@@ -69,6 +70,21 @@ class Level1Scene:
         self.score_sound = score_sound
         self.next_ex_sound = next_ex_sound
         self.level = "Level 1"
+        # Khởi tạo biến theo dõi trạng thái phát voice
+        self.current_voice_played = False
+        # Tải các file âm thanh voice tương ứng với động tác
+        self.voices = {}
+        for exercise in videos.keys():
+            voice_path = f"assets/sounds/voices/{exercise}.mp3"
+            try:
+                if os.path.exists(voice_path):
+                    self.voices[exercise] = pygame.mixer.Sound(voice_path)
+                    self.voices[exercise].set_volume(1.0)
+                    print(f"DEBUG: Loaded voice for {exercise} at {voice_path}")
+                else:
+                    print(f"DEBUG: Voice file not found for {exercise} at {voice_path}")
+            except pygame.error as e:
+                print(f"DEBUG: Error loading voice for {exercise}: {str(e)}")
 
     def make_landmark_timestep(self, results):
         lm_list = []
@@ -85,7 +101,7 @@ class Level1Scene:
         return lm_list
 
     def detect(self):
-        if len(self.lm_list) == 7:
+        if len(self.lm_list) == 15:
             lm_array = np.array(self.lm_list)
             lm_array = np.expand_dims(lm_array, axis=0)
             results = self.model.predict(lm_array)
@@ -151,7 +167,7 @@ class Level1Scene:
             if results.pose_landmarks:
                 lm = self.make_landmark_timestep(results)
                 self.lm_list.append(lm)
-                if len(self.lm_list) == 7:
+                if len(self.lm_list) == 15:
                     detect_thread = threading.Thread(target=self.detect)
                     detect_thread.start()
                     self.lm_list = []
@@ -160,7 +176,13 @@ class Level1Scene:
             try:
                 if self.current_exercise_index < len(self.exercises):
                     current_exercise = self.exercises[self.current_exercise_index]
-                    cap = self.videos[list(exercise_mapping.keys())[list(exercise_mapping.values()).index(current_exercise)]]
+                    exercise_key = list(exercise_mapping.keys())[list(exercise_mapping.values()).index(current_exercise)]
+                    cap = self.videos[exercise_key]
+                    # Phát âm thanh voice khi bắt đầu động tác mới
+                    if not self.current_voice_played and exercise_key in self.voices:
+                        self.voices[exercise_key].play()
+                        self.current_voice_played = True
+                        print(f"DEBUG: Playing voice for {exercise_key}")
                     fps = cap.get(cv2.CAP_PROP_FPS)
                     if fps > 0:
                         frame_time = 1000 / fps
@@ -188,20 +210,34 @@ class Level1Scene:
                 else:
                     exercise_text = self.font.render("Bài tập: Hoàn thành", True, (255, 255, 255))
                 elapsed_time = (current_time - self.start_time) / 1000
-                if elapsed_time >= 120 and self.current_exercise_index < len(self.exercises) - 1:
-                    if self.correct_count < self.required_correct_count:
+                # Sửa logic thời gian
+                if elapsed_time >= 120 and self.current_exercise_index < len(self.exercises):
+                    # Lưu điểm số và thời gian của động tác hiện tại
+                    self.exercise_scores.append(self.score)
+                    self.total_score += self.score
+                    elapsed_time = (current_time - self.start_time) / 1000
+                    self.exercise_times.append(elapsed_time)
+                    # Chuyển sang động tác tiếp theo
+                    if self.current_exercise_index < len(self.exercises) - 1:
+                        self.correct_count = 0
+                        self.score = 0
+                        self.current_exercise_index += 1
                         self.start_time = current_time
-                elif elapsed_time >= 120 and self.current_exercise_index == len(self.exercises) - 1:
-                    if self.correct_count >= self.required_correct_count:
-                        self.total_score += self.score
+                        self.waiting_for_next_exercise = False
+                        self.sound_played = False
+                        self.current_voice_played = False
+                        self.next_ex_sound.play()
+                        print(f"DEBUG: Moving to next exercise: {self.exercises[self.current_exercise_index]}")
+                    else:
+                        # Động tác cuối cùng, kết thúc level
+                        total_time = sum(self.exercise_times)
+                        final_score = self.total_score
+                        player = PlayerData(self.player_name, final_score, total_time, self.level,
+                                          exercise_names=self.exercise_names, exercise_scores=self.exercise_scores, exercise_times=self.exercise_times)
+                        save_score(player)
                         self._is_done = True
                 elif self.current_exercise_index >= len(self.exercises) and not self._is_done:
                     self._is_done = True
-                    current_time = pygame.time.get_ticks()
-                    if self.current_exercise_index < len(self.exercises):
-                        elapsed_time = (current_time - self.start_time) / 1000
-                        self.exercise_times.append(elapsed_time)
-                        self.exercise_scores.append(self.score)
                     total_time = sum(self.exercise_times)
                     final_score = self.total_score + self.score
                     player = PlayerData(self.player_name, final_score, total_time, self.level,
@@ -231,7 +267,13 @@ class Level1Scene:
                         self.start_time = current_time
                         self.waiting_for_next_exercise = False
                         self.sound_played = False
+                        self.current_voice_played = False
                     elif self.current_exercise_index == len(self.exercises) - 1 and self.correct_count >= self.required_correct_count:
+                        total_time = sum(self.exercise_times)
+                        final_score = self.total_score + self.score
+                        player = PlayerData(self.player_name, final_score, total_time, self.level,
+                                          exercise_names=self.exercise_names, exercise_scores=self.exercise_scores, exercise_times=self.exercise_times)
+                        save_score(player)
                         self._is_done = True
 
     def draw(self):
@@ -249,3 +291,6 @@ class Level1Scene:
         if hasattr(self, 'videos'):
             for cap in self.videos.values():
                 cap.release()
+        if hasattr(self, 'voices'):
+            for voice in self.voices.values():
+                del voice

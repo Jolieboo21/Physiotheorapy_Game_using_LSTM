@@ -27,6 +27,7 @@ clock = pygame.time.Clock()
 music_path = "assets/sounds/bg_music.mp3"
 try:
     pygame.mixer.music.load(music_path)
+    pygame.mixer.music.set_volume(0.5)
     pygame.mixer.music.play(-1)
 except FileNotFoundError:
     print(f"DEBUG: Music file not found at {music_path}")

@@ -44,7 +44,7 @@ class LoadingScene:
         self.progress = 10
 
         # Tải model
-        model_path = 'model/model_7.h5'
+        model_path = 'model/model_15.h5'
         if not os.path.exists(model_path):
             raise FileNotFoundError(f"Model file not found at: {model_path}")
         try:
@@ -101,6 +101,7 @@ class LoadingScene:
         # Tải âm thanh
         try:
             self.score_sound = pygame.mixer.Sound("assets/sounds/bell_3.mp3")
+            self.score_sound.set_volume(0.2)
             self.next_ex_sound = pygame.mixer.Sound("assets/sounds/woosh.mp3")
         except FileNotFoundError:
             raise FileNotFoundError("Sound files not found in assets/sounds/")

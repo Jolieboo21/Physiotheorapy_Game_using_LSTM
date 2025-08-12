@@ -259,20 +259,24 @@
     },
     {
         "name": "hihi",
-        "total_score": 0,
-        "total_time": 23.56,
+        "total_score": 300,
+        "total_time": 53.29,
         "level": "Level 1",
-        "play_date": "2025-08-07 22:36:50",
+        "play_date": "2025-08-08 10:59:07",
         "exercise_names": [
-            "Nâng đầu gối",
-            "Tay trước ngực",
-            "Tập ngực"
+            "Duỗi chân",
+            "Chéo tay",
+            "Kết hợp tay và chân"
         ],
         "exercise_scores": [
-            0
+            100,
+            100,
+            100
         ],
         "exercise_times": [
-            23.559
+            23.988,
+            12.797,
+            16.508
         ]
     },
     {
@@ -393,6 +397,93 @@
             26.068,
             13.346,
             19.53
+        ]
+    },
+    {
+        "name": "ben10",
+        "total_score": 1000,
+        "total_time": 221.48,
+        "level": "Level 3",
+        "play_date": "2025-08-08 10:10:52",
+        "exercise_names": [
+            "Chéo tay",
+            "Cúi người về trước",
+            "Giơ tay ngang",
+            "Tập ngực",
+            "Nâng đầu gối",
+            "Kết hợp tay và chân",
+            "Nâng tay",
+            "Duỗi chân",
+            "Xoay tay",
+            "Tay trước ngực"
+        ],
+        "exercise_scores": [
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100
+        ],
+        "exercise_times": [
+            13.898,
+            26.893,
+            21.186,
+            41.484,
+            17.331,
+            11.57,
+            14.532,
+            27.405,
+            13.754,
+            33.429
+        ]
+    },
+    {
+        "name": "Quy Phan",
+        "total_score": 300,
+        "total_time": 56.63,
+        "level": "Level 1",
+        "play_date": "2025-08-08 10:38:16",
+        "exercise_names": [
+            "Kết hợp tay và chân",
+            "Tập ngực",
+            "Duỗi chân"
+        ],
+        "exercise_scores": [
+            100,
+            100,
+            100
+        ],
+        "exercise_times": [
+            17.808,
+            26.765,
+            12.059
+        ]
+    },
+    {
+        "name": "tete",
+        "total_score": 300,
+        "total_time": 54.7,
+        "level": "Level 1",
+        "play_date": "2025-08-08 10:44:27",
+        "exercise_names": [
+            "Cúi người về trước",
+            "Xoay tay",
+            "Giơ tay ngang"
+        ],
+        "exercise_scores": [
+            100,
+            100,
+            100
+        ],
+        "exercise_times": [
+            14.581,
+            15.088,
+            25.033
         ]
     }
 ]

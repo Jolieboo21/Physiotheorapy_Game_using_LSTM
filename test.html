@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Kết quả tập luyện</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      width: 1280px;
+      height: 720px;
+      background-image: url('assets/images/result_bg.png');
+      background-size: cover;
+      margin: 0;
+      padding: 0;
+      position: relative;
+    }
+    .info, .analysis, .ranking {
+      position: absolute;
+      left: 50px;
+      color: black;
+    }
+    .info {
+      top: 410px;
+    }
+    .info div {
+      margin-bottom: 10px;
+    }
+    .chart {
+      position: absolute;
+      top: 50px;
+      left: 70px;
+      width: 1000px;
+      height: 300px;
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+    }
+    .legend {
+      position: absolute;
+      top: 30px;
+      left: 1080px;
+    }
+    .legend div {
+      margin-bottom: 10px;
+    }
+    .analysis {
+      top: 530px;
+    }
+    .ranking {
+      position: absolute;
+      top: 450px;
+      left: 800px;
+    }
+    .buttons {
+      position: absolute;
+      bottom: 30px;
+      width: 100%;
+      text-align: center;
+    }
+    .buttons img {
+      width: 150px;
+      height: 75px;
+      margin: 0 75px;
+    }
+  </style>
+</head>
+<body>
+  <div class="info">
+    <div><strong>Tên người tập:</strong> [Tên]</div>
+    <div><strong>Điểm tổng:</strong> [Điểm]</div>
+    <div><strong>Thời gian tổng:</strong> [Thời gian]</div>
+    <div><strong>Cấp độ:</strong> [Cấp độ]</div>
+  </div>
+
+  <div class="chart">
+    <p style="text-align: center; margin-top: 100px;">[Biểu đồ cột điểm & thời gian]</p>
+  </div>
+
+  <div class="legend">
+    <div>🟩 Điểm (Xanh lá)</div>
+    <div>🟨 Thời gian (Vàng)</div>
+  </div>
+
+  <div class="analysis">
+    <div style="color: green;">✔ Động tác tốt nhất: [Tên bài tập]</div>
+    <div style="color: red;">✘ Cần cải thiện: [Tên bài tập]</div>
+  </div>
+
+  <div class="ranking">
+    <div>🥇 Hạng 1: [Tên] - [Điểm]</div>
+    <div>⬆ Trên bạn: [Tên]</div>
+    <div>📊 Hạng của bạn: [Vị trí]</div>
+  </div>
+
+  <div class="buttons">
+    <img src="assets/images/play_button.png" alt="Dừng">
+    <img src="assets/images/play_button.png" alt="Tiếp">
+  </div>
+</body>
+</html>
